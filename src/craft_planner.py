@@ -67,10 +67,10 @@ def make_effector(rule):
         #Check consumption requirements
         next_state = state.copy()
         for item, num_consumed in rule['Consumes']:
-            next_state[item] -= num_consumed:
+            next_state[item] -= num_consumed
 
         for item, num_produced in rule['Produces']:
-            next_state[item] += num_produced:
+            next_state[item] += num_produced
 
         return next_state
 
