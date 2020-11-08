@@ -172,7 +172,7 @@ def search(graph, state, is_goal, limit, heuristic):
         if is_goal(current_state):
             pathCells = []
             cs = current_state
-            while cs is not None:
+            while cs is not state:
                 action = action_to_state[cs] #action to lead up to previous state
                 pathCells.append((cs, action)) #append previous state and the action
                 cs = came_from[cs] #go back one, this has to be on the end because otherwise we might be putting in None. I guess I can do while came_from[cs] is not none but too late im sticking with it
