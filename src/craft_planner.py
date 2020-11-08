@@ -49,7 +49,7 @@ def make_checker(rule):
 
         #Check consumption requirements
         for item, condition in rule['Consumes']:
-            if state[item] != condition:
+            if state[item] >= condition:
                 return False
         return True
 
@@ -136,6 +136,49 @@ def search(graph, state, is_goal, limit, heuristic):
     # in the path and the action that took you to this state
     while time() - start_time < limit:
         pass
+
+    explored_states = dict()
+    frontQueue = []
+    heappush(frontQueue, (0, state))
+
+    came_from = dict()
+    cost_so_far = dict()
+    action_to_state = dict()
+
+    action_to_state[state] = None
+    came_from[state] = None
+    cost_so_far[state] = 0
+
+    while frontQueue > 0:
+        p1, current_state = heappop(frontQueue)
+        explored_states[state] = True
+
+    #----------------------------------------------------------------
+    #is what happens if we find destination
+        if is_goal(state):
+            pathCells = []
+            cs = current_state
+            action = action_to_state[cs] #action that leads up to our current state
+            pathCells.append((cs, action))
+            while cs is not None:
+                action = action_to_state[came_from[cs]] #action to lead up to previous state
+                pathCells.append((came_from[cs], action)) #append previous state and the action
+                cs = came_from[cs] #go back one
+            return pathCells
+    #-----------------------------------------------------------------
+
+        for name, new_state, cost in graph(current_state):
+            cost = heuristic(new_state, name)
+            new_cost = cost_so_far[current_state] + cost
+            if new_state not in cost_so_far or new_cost < cost_so_far[new_state]:
+                cost_so_far[new_state] = new_cost
+                priority = new_cost
+                heappush(frontQueue, (priority, new_state))
+                came_from[new_state] = current_state
+                action_to_state[new_state] = name
+
+#in the case that it exits but no path is found
+return None
 
     # Failed to find a path
     print(time() - start_time, 'seconds.')
