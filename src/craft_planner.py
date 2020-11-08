@@ -110,17 +110,19 @@ def heuristic(state, action_name):
         for tool in list_of_tools:
             if state[tool] > 1:
                 return inf
-        #Get shortened name
-        shortened_name = action_name[6:-9]
-        #Don't make worse pickaxes or axes
-        if shortened_name == "wooden_axe" and state["stone_axe"]:
-            return inf
-        if (shortened_name == "stone_axe" or shortened_name == "wooden_axe") and state["iron_axe"]:
-            return inf
-        if shortened_name == "wooden_pickaxe" and state["stone_pickaxe"]:
-            return inf
-        if (shortened_name == "stone_pickaxe" or shortened_name == "wooden_pickaxe") and state["iron_pickaxe"]:
-            return inf
+        #check these only for benchcrafting
+        if action_name[-8] == "at bench":
+            #Get shortened name
+            shortened_name = action_name[6:-9]
+            #Don't make worse pickaxes or axes
+            if shortened_name == "wooden_axe" and state["stone_axe"]:
+                return inf
+            if (shortened_name == "stone_axe" or shortened_name == "wooden_axe") and state["iron_axe"]:
+                return inf
+            if shortened_name == "wooden_pickaxe" and state["stone_pickaxe"]:
+                return inf
+            if (shortened_name == "stone_pickaxe" or shortened_name == "wooden_pickaxe") and state["iron_pickaxe"]:
+                return inf
 
 
 
