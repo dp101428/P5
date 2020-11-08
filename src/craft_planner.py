@@ -85,7 +85,7 @@ def make_goal_checker(goal):
 
     def is_goal(state):
         # This code is used in the search process and may be called millions of times.
-        goalItem, goalAmount = goal
+        goalItem, goalAmount = goal.items()
         if state[goalItem] == goalAmount:
             return True
         return False
@@ -188,8 +188,8 @@ def search(graph, state, is_goal, limit, heuristic):
                 came_from[new_state] = current_state
                 action_to_state[new_state] = name
 
-#in the case that it exits but no path is found
-return None
+    #in the case that it exits but no path is found
+    return None
 
     # Failed to find a path
     print(time() - start_time, 'seconds.')
