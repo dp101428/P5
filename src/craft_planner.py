@@ -52,7 +52,7 @@ def make_checker(rule):
         #Check consumption requirements
         if "Consumes" in rule:
             for item, condition in rule['Consumes'].items():
-                if state[item] >= condition:
+                if state[item] < condition:
                     return False
         return True
 
@@ -188,7 +188,7 @@ def search(graph, state, is_goal, limit, heuristic):
                 heappush(frontQueue, (priority, new_state))
                 came_from[new_state] = current_state
                 action_to_state[new_state] = name
-                print(new_state)
+    #            print(new_state)
 
     # Failed to find a path
     print(time() - start_time, 'seconds.')
