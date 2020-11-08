@@ -44,14 +44,16 @@ def make_checker(rule):
         # This code is called by graph(state) and runs millions of times.
         # Tip: Do something with rule['Consumes'] and rule['Requires'].
         #Check requirements
-        for item, condition in rule['Requires'].items():
-            if state[item] != condition:
-                return False
+        if "Requires" in rule:
+            for item, condition in rule['Requires'].items():
+                if state[item] != condition:
+                    return False
 
         #Check consumption requirements
-        for item, condition in rule['Consumes'].items():
-            if state[item] >= condition:
-                return False
+        if "Consumes" in rule:
+            for item, condition in rule['Consumes'].items():
+                if state[item] >= condition:
+                    return False
         return True
 
     return check
@@ -68,8 +70,9 @@ def make_effector(rule):
 
         #Check consumption requirements
         next_state = state.copy()
-        for item, num_consumed in rule['Consumes'].items():
-            next_state[item] -= num_consumed
+        if "Consumes" in rule:
+            for item, num_consumed in rule['Consumes'].items():
+                next_state[item] -= num_consumed
 
         for item, num_produced in rule['Produces'].items():
             next_state[item] += num_produced
