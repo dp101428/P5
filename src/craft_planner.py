@@ -2,6 +2,7 @@ import json
 from collections import namedtuple, defaultdict, OrderedDict
 from timeit import default_timer as time
 from math import inf
+from heapq import heappop, heappush
 
 Recipe = namedtuple('Recipe', ['name', 'check', 'effect', 'cost'])
 
@@ -105,7 +106,7 @@ def heuristic(state, action_name):
     # Implement your heuristic here!
     #Only check these requirements if you're crafting
     if action_name[0:5] == "craft":
-        #Don't make duplicate tools 
+        #Don't make duplicate tools
         list_of_tools = ["bench", "furnace", "wooden_pickaxe", "stone_pickaxe", "iron_pickaxe", "wooden_axe", "stone_axe", "iron_axe"]
         for tool in list_of_tools:
             if state[tool] > 1:
@@ -136,10 +137,7 @@ def search(graph, state, is_goal, limit, heuristic):
     # When you find a path to the goal return a list of tuples [(state, action)]
     # representing the path. Each element (tuple) of the list represents a state
     # in the path and the action that took you to this state
-    while time() - start_time < limit:
-        pass
 
-    explored_states = dict()
     frontQueue = []
     heappush(frontQueue, (0, state))
 
@@ -151,13 +149,12 @@ def search(graph, state, is_goal, limit, heuristic):
     came_from[state] = None
     cost_so_far[state] = 0
 
-    while frontQueue > 0:
-        p1, current_state = heappop(frontQueue)
-        explored_states[state] = True
+    while frontQueue and time() - start_time < limit:
+        _, current_state = heappop(frontQueue)
 
     #----------------------------------------------------------------
     #is what happens if we find destination
-        if is_goal(state):
+        if is_goal(current_state):
             pathCells = []
             cs = current_state
             action = action_to_state[cs] #action that leads up to our current state
@@ -165,11 +162,11 @@ def search(graph, state, is_goal, limit, heuristic):
             while cs is not None:
                 action = action_to_state[came_from[cs]] #action to lead up to previous state
                 pathCells.append((came_from[cs], action)) #append previous state and the action
-                cs = came_from[cs] #go back one
+                cs = came_from[cs] #go back one, this has to be on the end because otherwise we might be putting in None. I guess I can do while came_from[cs] is not none but too late im sticking with it
             return pathCells
     #-----------------------------------------------------------------
 
-        for name, new_state, cost in graph(current_state):
+        for name, new_state, _ in graph(current_state):
             cost = heuristic(new_state, name)
             new_cost = cost_so_far[current_state] + cost
             if new_state not in cost_so_far or new_cost < cost_so_far[new_state]:
