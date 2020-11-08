@@ -172,17 +172,15 @@ def search(graph, state, is_goal, limit, heuristic):
         if is_goal(current_state):
             pathCells = []
             cs = current_state
-            action = action_to_state[cs] #action that leads up to our current state
-            pathCells.append((cs, action))
             while cs is not None:
-                action = action_to_state[came_from[cs]] #action to lead up to previous state
-                pathCells.append((came_from[cs], action)) #append previous state and the action
+                action = action_to_state[cs] #action to lead up to previous state
+                pathCells.append((cs, action)) #append previous state and the action
                 cs = came_from[cs] #go back one, this has to be on the end because otherwise we might be putting in None. I guess I can do while came_from[cs] is not none but too late im sticking with it
             return pathCells
     #-----------------------------------------------------------------
 
-        for name, new_state, _ in graph(current_state):
-            cost = heuristic(new_state, name)
+        for name, new_state, cost_to_state in graph(current_state):
+            cost = heuristic(new_state, name) + cost_to_state
             new_cost = cost_so_far[current_state] + cost
             if new_state not in cost_so_far or new_cost < cost_so_far[new_state]:
                 cost_so_far[new_state] = new_cost
@@ -190,9 +188,7 @@ def search(graph, state, is_goal, limit, heuristic):
                 heappush(frontQueue, (priority, new_state))
                 came_from[new_state] = current_state
                 action_to_state[new_state] = name
-
-    #in the case that it exits but no path is found
-    return None
+                print(new_state)
 
     # Failed to find a path
     print(time() - start_time, 'seconds.')
@@ -231,7 +227,7 @@ if __name__ == '__main__':
     state.update(Crafting['Initial'])
 
     # Search for a solution
-    resulting_plan = search(graph, state, is_goal, 5, heuristic)
+    resulting_plan = search(graph, state, is_goal, 30, heuristic)
 
     if resulting_plan:
         # Print resulting plan
