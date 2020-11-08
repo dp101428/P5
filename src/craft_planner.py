@@ -1,6 +1,7 @@
 import json
 from collections import namedtuple, defaultdict, OrderedDict
 from timeit import default_timer as time
+from math import inf
 
 Recipe = namedtuple('Recipe', ['name', 'check', 'effect', 'cost'])
 
@@ -100,8 +101,29 @@ def graph(state):
             yield (r.name, r.effect(state), r.cost)
 
 
-def heuristic(state):
+def heuristic(state, action_name):
     # Implement your heuristic here!
+    #Only check these requirements if you're crafting
+    if action_name[0:5] == "craft":
+        #Don't make duplicate tools 
+        list_of_tools = ["bench", "furnace", "wooden_pickaxe", "stone_pickaxe", "iron_pickaxe", "wooden_axe", "stone_axe", "iron_axe"]
+        for tool in list_of_tools:
+            if state[tool] > 1:
+                return inf
+        #Get shortened name
+        shortened_name = action_name[6:-9]
+        #Don't make worse pickaxes or axes
+        if shortened_name == "wooden_axe" and state["stone_axe"]:
+            return inf
+        if (shortened_name == "stone_axe" or shortened_name == "wooden_axe") and state["iron_axe"]:
+            return inf
+        if shortened_name == "wooden_pickaxe" and state["stone_pickaxe"]:
+            return inf
+        if (shortened_name == "stone_pickaxe" or shortened_name == "wooden_pickaxe") and state["iron_pickaxe"]:
+            return inf
+
+
+
     return 0
 
 def search(graph, state, is_goal, limit, heuristic):
