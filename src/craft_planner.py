@@ -114,7 +114,9 @@ def heuristic(state, action_name):
     if state["wood"] == 1 and "for wood" not in action_name:
         return inf
     
-    
+    #Don't need more than 8 cobble
+    if state["cobble"] > 8:
+        return inf
 
     
     #Only check these requirements if you're crafting
@@ -151,6 +153,7 @@ def heuristic(state, action_name):
             #At this point, if we're making a tool, priortiise it, tools are good)
             if "axe" in shortened_name:
                 return -.5
+
     #Check to see that you never use a bad tool, or that you make a better tool instead of using a bad one
     elif "axe" in action_name:
         #check pickaxes
@@ -159,9 +162,7 @@ def heuristic(state, action_name):
                 return inf
             if "wooden_pickaxe" in action_name and (state["stone_pickaxe"] or (state["cobble"] >= 3 and state["stick"] >= 2)):
                 return inf
-            #Don't need more than 8 cobble
-            if state["cobble"] > 8:
-                return inf
+            
             #Also make sure we aren't trying to get cobble if we already have everything that needs cobble
             if "cobble" in action_name and state["furnace"] and (state["stone_pickaxe"] or state["iron_pickaxe"]) and (state["stone_axe"] or state["iron_axe"]):
                 return inf
@@ -190,7 +191,7 @@ def heuristic(state, action_name):
     #If we're smelting, always do this (if we weren't going to smelt we shouldn't have mined)
     if action_name == "smelt ore in furnace":
         return -inf
-    print (action_name + " returned 0")
+    #print (action_name + " returned 0")
     return 0
 
 def search(graph, state, is_goal, limit, heuristic):
@@ -215,11 +216,12 @@ def search(graph, state, is_goal, limit, heuristic):
 
     while frontQueue and time() - start_time < limit:
         _, current_state = heappop(frontQueue)
-        if current_state in action_to_state:
-            print (action_to_state[current_state])
-        print(current_state)
-        print (_)
+        #if current_state in action_to_state:
+        #    print (action_to_state[current_state])
+        #print(current_state)
+        #print (_)
         if _ == inf:
+            #print (frontQueue[0:100])
             break
         #if current_state["ingot"] > 0:
         #    print("ingot!!")
@@ -238,13 +240,12 @@ def search(graph, state, is_goal, limit, heuristic):
     #-----------------------------------------------------------------
 
         for name, new_state, cost_to_state in graph(current_state):
-            cost = heuristic(new_state, name) + cost_to_state
+            cost = cost_to_state
             new_cost = cost_so_far[current_state] + cost
-            if cost != inf:
-                print (new_cost)
-            if new_state not in cost_so_far or new_cost < cost_so_far[new_state]:
+            if new_cost != inf and (new_state not in cost_so_far or new_cost < cost_so_far[new_state]):
+                #print("adding")
                 cost_so_far[new_state] = new_cost
-                priority = new_cost
+                priority = new_cost + heuristic(new_state, name)
                 heappush(frontQueue, (priority, new_state))
                 came_from[new_state] = current_state
                 action_to_state[new_state] = name
