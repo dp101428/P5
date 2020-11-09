@@ -1,7 +1,7 @@
 import json
 from collections import namedtuple, defaultdict, OrderedDict
 from timeit import default_timer as time
-from math import inf
+from math import inf, ceil
 from heapq import heappop, heappush
 
 Recipe = namedtuple('Recipe', ['name', 'check', 'effect', 'cost'])
@@ -107,23 +107,23 @@ def graph(state):
 
 def heuristic(state, action_name):
     # Implement your heuristic here!
-    #You should never have more than 1 wood, should be turning it into planks instead
-    if state["wood"] > 1:
+    #You should never have more than 1 wood, unless the objective is for it, should be turning it into planks instead
+    if state["wood"] > (1 if "wood" not in Crafting['Goal'] else Crafting["Goal"]["wood"]):
         return inf
-    #If you have wood, you should be turning it into planks
-    if state["wood"] == 1 and "for wood" not in action_name:
+    #If you have wood, you should be turning it into planks, if you're not trying to gather it
+    if "wood" not in Crafting['Goal'] and  state["wood"] == 1 and "for wood" not in action_name:
         return inf
 
     #Don't need more than 8 cobble
-    if state["cobble"] > 8:
+    if state["cobble"] > (8 if "cobble" not in Crafting['Goal'] else Crafting["Goal"]["cobble"]):
         return inf
 
     #never need more than 6 ingot since max ingot to craft is 6 with the rails
-    if state["ingot"] > 6:
+    if state["ingot"] > (6 if "ingot" not in Crafting['Goal'] else Crafting["Goal"]["ingot"]):
         return inf
 
-    #seems like we only need 1 cart for now suspect to change
-    if state["cart"] > 1:
+    #seems like we only need 1 cart for now subject to change
+    if state["cart"] > (1 if "cart" not in Crafting['Goal'] else Crafting["Goal"]["cart"]):
         return inf
 
     #Only check these requirements if you're crafting
@@ -136,15 +136,15 @@ def heuristic(state, action_name):
 
 
         #No recipie needs more than 2 sticks, so if we have more than 4 (1 craft worth) something is bad
-        if state["stick"] > 4:
+        if (state["stick"]) > (4 if "stick" not in Crafting['Goal'] else ceil(Crafting["Goal"]["stick"]/4) * 4):
             return inf
-
+#
         #Don't need more planks than 1 craft makes, except that due to reasons you might need more temporarily
-        if state["plank"] > 7:
+        if state["plank"] > (7 if "plank" not in Crafting['Goal'] else ceil(Crafting["Goal"]["plank"]/4) * 4):
             return inf
-        ##If you have enough planks to make sticks, and you have made everything needing planks, make sticks instead
-        #if state["bench"] and state["wooden_pickaxe"] and state["wooden_axe"] and state["plank"] > 3 and action_name != "craft plank" and action_name != "craft stick":
-        #    return inf
+        #If you have enough planks to make sticks, and you have made everything needing planks, and planks aren't a goal, make sticks instead
+        if "plank" not in Crafting["Goal"] and state["bench"] and state["wooden_pickaxe"] and state["wooden_axe"] and state["plank"] > 3 and action_name != "craft plank" and action_name != "craft stick":
+            return inf
         #check these only for benchcrafting
         if action_name[-8:] == "at bench":
             #Get shortened name
@@ -186,24 +186,25 @@ def heuristic(state, action_name):
             if "wooden_axe" in action_name and (state["stone_axe"] or (state["cobble"] >= 3 and state["stick"] >= 2)):
                 return inf
 
+    #Only run these checks if we aren't trying to gather coal or ore
+    if "coal" not in Crafting["Goal"] and "ore" not in Crafting["Goal"]:
+        #If we have no ore, don't get coal
+        if state["ore"] == 0 and state["coal"] > 0:
+            return inf
+        #If we have ore, don't get more ore, smelt it instead
+        if state["ore"] > 1:
+            return inf
+        #If we have coal, don't get more coal, use it for smelting:
+        if state["coal"] > 1:
+            return inf
+        #Check to see that if we can smelt ore, we are doing so
+        #Essentially if we're doing anything else, don't do it
+        if state["ore"] == 1 and "for coal" not in action_name and state["furnace"] and state["coal"] == 1 and "craft furnace" not in action_name:
+            return inf
 
-    #If we have no ore, don't get coal
-    if state["ore"] == 0 and state["coal"] > 0:
-        return inf
-    #If we have ore, don't get more ore, smelt it instead
-    if state["ore"] > 1:
-        return inf
-    #If we have coal, don't get more coal, use it for smelting:
-    if state["coal"] > 1:
-        return inf
-    #Check to see that if we can smelt ore, we are doing so
-    #Essentially if we're doing anything else, don't do it
-    if state["ore"] == 1 and "for coal" not in action_name and state["furnace"] and state["coal"] == 1 and "craft furnace" not in action_name:
-        return inf
-
-    #If we're smelting, always do this (if we weren't going to smelt we shouldn't have mined)
-    if action_name == "smelt ore in furnace":
-        return -inf
+        #If we're smelting, always do this (if we weren't going to smelt we shouldn't have mined)
+        if action_name == "smelt ore in furnace":
+            return -inf
     #print (action_name + " returned 0")
     return 0
 
@@ -215,7 +216,13 @@ def search(graph, state, is_goal, limit, heuristic):
     # When you find a path to the goal return a list of tuples [(state, action)]
     # representing the path. Each element (tuple) of the list represents a state
     # in the path and the action that took you to this state
-
+    
+    #Set the caps for resources
+    global caps
+    caps = {}
+    for item, amount in Crafting['Goal'].items():
+        caps[item] = amount
+    
     frontQueue = []
     heappush(frontQueue, (0, state))
 
