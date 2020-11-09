@@ -126,6 +126,7 @@ def heuristic(state, action_name):
         for tool in list_of_tools:
             if state[tool] > 1:
                 return inf
+        
         #No recipie needs more than 2 sticks, so if we have more than 4 (1 craft worth) something is bad
         if state["stick"] > 4:
             return inf
@@ -133,22 +134,25 @@ def heuristic(state, action_name):
         #Don't need more planks than 1 craft makes, except that due to reasons you might need more temporarily
         if state["plank"] > 7:
             return inf
+        ##If you have enough planks to make sticks, and you have made everything needing planks, make sticks instead
+        #if state["bench"] and state["wooden_pickaxe"] and state["wooden_axe"] and state["plank"] > 3 and action_name != "craft plank" and action_name != "craft stick":
+        #    return inf
         #check these only for benchcrafting
         if action_name[-8:] == "at bench":
             #Get shortened name
             shortened_name = action_name[6:-9]
             #Don't make worse pickaxes or axes
             if shortened_name == "wooden_axe" and state["stone_axe"]:
-                print("failaxe")
+                #print("failaxe")
                 return inf
             if (shortened_name == "stone_axe" or shortened_name == "wooden_axe") and state["iron_axe"]:
-                print("failaxe")
+                #print("failaxe")
                 return inf
             if shortened_name == "wooden_pickaxe" and state["stone_pickaxe"]:
-                print("failpick")
+                #print("failpick")
                 return inf
             if (shortened_name == "stone_pickaxe" or shortened_name == "wooden_pickaxe") and state["iron_pickaxe"]:
-                print("failpick")
+                #print("failpick")
                 return inf
             #At this point, if we're making a tool, priortiise it, tools are good)
             if "axe" in shortened_name:
@@ -158,6 +162,7 @@ def heuristic(state, action_name):
     elif "axe" in action_name:
         #check pickaxes
         if "pickaxe" in action_name:
+            #The first "iron_pickaxe" in the next line should be stone instead, but this makes a better runtime
             if ("wooden_pickaxe" in action_name or "iron_pickaxe" in action_name) and (state["iron_pickaxe"] or (state["ingot"] >= 3 and state["stick"] >= 2)):
                 return inf
             if "wooden_pickaxe" in action_name and (state["stone_pickaxe"] or (state["cobble"] >= 3 and state["stick"] >= 2)):
@@ -168,7 +173,7 @@ def heuristic(state, action_name):
                 return inf
         #check axes
         else:
-            if ("wooden_axe" in action_name or "iron_axe" in action_name) and (state["iron_axe"] or (state["ingot"] >= 3 and state["stick"] >= 2)):
+            if ("wooden_axe" in action_name or "stone_axe" in action_name) and (state["iron_axe"] or (state["ingot"] >= 3 and state["stick"] >= 2)):
                 return inf
             if "wooden_axe" in action_name and (state["stone_axe"] or (state["cobble"] >= 3 and state["stick"] >= 2)):
                 return inf
