@@ -171,9 +171,9 @@ def heuristic(state, action_name):
         #check pickaxes
         if "pickaxe" in action_name:
             #The first "iron_pickaxe" in the next line should be stone instead, but this makes a better runtime
-            if ("wooden_pickaxe" in action_name or "iron_pickaxe" in action_name) and (state["iron_pickaxe"] or (state["ingot"] >= 3 and state["stick"] >= 2)):
+            if ("wooden_pickaxe" in action_name or "stone_pickaxe" in action_name) and (state["iron_pickaxe"] or (state["ingot"] >= 3 and state["stick"] >= 2)):
                 return inf
-            if "wooden_pickaxe" in action_name and (state["stone_pickaxe"] or (state["cobble"] >= 3 and state["stick"] >= 2)):
+            if "wooden_pickaxe" in action_name and (state["stone_pickaxe"] or (state["cobble"] > 3 and state["stick"] >= 2)):
                 return inf
 
             #Also make sure we aren't trying to get cobble if we already have everything that needs cobble
@@ -248,6 +248,7 @@ def search(graph, state, is_goal, limit, heuristic):
     #----------------------------------------------------------------
     #is what happens if we find destination
         if is_goal(current_state):
+            print (cost_so_far[current_state])
             pathCells = []
             cs = current_state
             while cs is not state:
@@ -265,12 +266,13 @@ def search(graph, state, is_goal, limit, heuristic):
                 #print("adding")
                 cost_so_far[new_state] = new_cost
                 priority = new_cost + heuristic(new_state, name)
-                if new_state["wooden_pickaxe"] == 1:
-                    if new_state["wooden_axe"] == 0:
-                        if new_state["cobble"] == 3:
-                            print(new_state)
-                            print(new_cost)
-                            print(priority)
+                #if new_state["wooden_pickaxe"] == 1:
+                #    if new_state["wooden_axe"] == 0:
+                #        if new_state["cobble"] == 3:
+                #            print(new_state)
+                #            print(new_cost)
+                #            print(priority)
+                #            print (name)
                 heappush(frontQueue, (priority, new_state))
                 came_from[new_state] = current_state
                 action_to_state[new_state] = name
