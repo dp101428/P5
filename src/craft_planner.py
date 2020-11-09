@@ -107,6 +107,16 @@ def graph(state):
 
 def heuristic(state, action_name):
     # Implement your heuristic here!
+    #You should never have more than 1 wood, should be turning it into planks instead
+    if state["wood"] > 1:
+        return inf
+    #If you have wood, you should be turning it into planks
+    if state["wood"] == 1 and "for wood" not in action_name:
+        return inf
+    
+    
+
+    
     #Only check these requirements if you're crafting
     if action_name[0:5] == "craft":
         #Don't make duplicate tools
@@ -114,34 +124,73 @@ def heuristic(state, action_name):
         for tool in list_of_tools:
             if state[tool] > 1:
                 return inf
+        #No recipie needs more than 2 sticks, so if we have more than 4 (1 craft worth) something is bad
+        if state["stick"] > 4:
+            return inf
+        
+        #Don't need more planks than 1 craft makes, except that due to reasons you might need more temporarily
+        if state["plank"] > 7:
+            return inf
         #check these only for benchcrafting
         if action_name[-8:] == "at bench":
             #Get shortened name
             shortened_name = action_name[6:-9]
             #Don't make worse pickaxes or axes
             if shortened_name == "wooden_axe" and state["stone_axe"]:
+                print("failaxe")
                 return inf
             if (shortened_name == "stone_axe" or shortened_name == "wooden_axe") and state["iron_axe"]:
+                print("failaxe")
                 return inf
             if shortened_name == "wooden_pickaxe" and state["stone_pickaxe"]:
+                print("failpick")
                 return inf
             if (shortened_name == "stone_pickaxe" or shortened_name == "wooden_pickaxe") and state["iron_pickaxe"]:
+                print("failpick")
                 return inf
-    #Check to see that you never use a bad tool
+            #At this point, if we're making a tool, priortiise it, tools are good)
+            if "axe" in shortened_name:
+                return -.5
+    #Check to see that you never use a bad tool, or that you make a better tool instead of using a bad one
     elif "axe" in action_name:
         #check pickaxes
         if "pickaxe" in action_name:
-            if ("wooden_pickaxe" in action_name or "iron_pickaxe" in action_name) and state["iron_pickaxe"]:
+            if ("wooden_pickaxe" in action_name or "iron_pickaxe" in action_name) and (state["iron_pickaxe"] or (state["ingot"] >= 3 and state["stick"] >= 2)):
                 return inf
-            if "wooden_pickaxe" in action_name and state["stone_pickaxe"]:
+            if "wooden_pickaxe" in action_name and (state["stone_pickaxe"] or (state["cobble"] >= 3 and state["stick"] >= 2)):
+                return inf
+            #Don't need more than 8 cobble
+            if state["cobble"] > 8:
+                return inf
+            #Also make sure we aren't trying to get cobble if we already have everything that needs cobble
+            if "cobble" in action_name and state["furnace"] and (state["stone_pickaxe"] or state["iron_pickaxe"]) and (state["stone_axe"] or state["iron_axe"]):
                 return inf
         #check axes
         else:
-            if ("wooden_axe" in action_name or "iron_axe" in action_name) and state["iron_axe"]:
+            if ("wooden_axe" in action_name or "iron_axe" in action_name) and (state["iron_axe"] or (state["ingot"] >= 3 and state["stick"] >= 2)):
                 return inf
-            if "wooden_axe" in action_name and state["stone_axe"]:
+            if "wooden_axe" in action_name and (state["stone_axe"] or (state["cobble"] >= 3 and state["stick"] >= 2)):
                 return inf
+        
+    
+    #If we have no ore, don't get coal
+    if state["ore"] == 0 and state["coal"] > 0:
+        return inf
+    #If we have ore, don't get more ore, smelt it instead
+    if state["ore"] > 1:
+        return inf
+    #If we have coal, don't get more coal, use it for smelting:
+    if state["coal"] > 1:
+        return inf
+    #Check to see that if we can smelt ore, we are doing so
+    #Essentially if we're doing anything else, don't do it
+    if state["ore"] == 1 and "for coal" not in action_name and state["furnace"] and state["coal"] == 1 and "craft furnace" not in action_name:
+        return inf
 
+    #If we're smelting, always do this (if we weren't going to smelt we shouldn't have mined)
+    if action_name == "smelt ore in furnace":
+        return -inf
+    print (action_name + " returned 0")
     return 0
 
 def search(graph, state, is_goal, limit, heuristic):
@@ -166,7 +215,15 @@ def search(graph, state, is_goal, limit, heuristic):
 
     while frontQueue and time() - start_time < limit:
         _, current_state = heappop(frontQueue)
-
+        if current_state in action_to_state:
+            print (action_to_state[current_state])
+        print(current_state)
+        print (_)
+        if _ == inf:
+            break
+        #if current_state["ingot"] > 0:
+        #    print("ingot!!")
+        
     #----------------------------------------------------------------
     #is what happens if we find destination
         if is_goal(current_state):
@@ -183,6 +240,8 @@ def search(graph, state, is_goal, limit, heuristic):
         for name, new_state, cost_to_state in graph(current_state):
             cost = heuristic(new_state, name) + cost_to_state
             new_cost = cost_so_far[current_state] + cost
+            if cost != inf:
+                print (new_cost)
             if new_state not in cost_so_far or new_cost < cost_so_far[new_state]:
                 cost_so_far[new_state] = new_cost
                 priority = new_cost
@@ -226,7 +285,6 @@ if __name__ == '__main__':
     # Initialize first state from initial inventory
     state = State({key: 0 for key in Crafting['Items']})
     state.update(Crafting['Initial'])
-
     # Search for a solution
     resulting_plan = search(graph, state, is_goal, 30, heuristic)
 
@@ -235,3 +293,4 @@ if __name__ == '__main__':
         for state, action in resulting_plan:
             print('\t',state)
             print(action)
+        print (len(resulting_plan))
