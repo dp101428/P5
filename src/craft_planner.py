@@ -188,23 +188,24 @@ def heuristic(state, action_name):
 
     #Only run these checks if we aren't trying to gather coal or ore
     if "coal" not in Crafting["Goal"] and "ore" not in Crafting["Goal"]:
+        print("ore stuff")
         #If we have no ore, don't get coal
         if state["ore"] == 0 and state["coal"] > 0:
             return inf
-        #If we have ore, don't get more ore, smelt it instead
-        if state["ore"] > 1:
-            return inf
-        #If we have coal, don't get more coal, use it for smelting:
-        if state["coal"] > 1:
-            return inf
+        
         #Check to see that if we can smelt ore, we are doing so
         #Essentially if we're doing anything else, don't do it
         if state["ore"] == 1 and "for coal" not in action_name and state["furnace"] and state["coal"] == 1 and "craft furnace" not in action_name:
             return inf
-
-        #If we're smelting, always do this (if we weren't going to smelt we shouldn't have mined)
-        if action_name == "smelt ore in furnace":
-            return -inf
+    #If we have ore, don't get more ore, smelt it instead
+    if state["ore"] > (1 if "ore" not in Crafting['Goal'] else Crafting["Goal"]["ore"]):
+        return inf
+    #If we have coal, don't get more coal, use it for smelting:
+    if state["coal"] > (1 if "coal" not in Crafting['Goal'] else Crafting["Goal"]["coal"]):
+        return inf
+    #If we're smelting, always do this (if we weren't going to smelt we shouldn't have mined)
+    if action_name == "smelt ore in furnace":
+        return -inf
     #print (action_name + " returned 0")
     return 0
 
