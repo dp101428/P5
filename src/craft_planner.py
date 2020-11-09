@@ -89,7 +89,7 @@ def make_goal_checker(goal):
     def is_goal(state):
         # This code is used in the search process and may be called millions of times.
         for goalItem, goalAmount in goal.items():
-            if state[goalItem] != goalAmount:
+            if state[goalItem] < goalAmount:
                 return False
         return True
 
@@ -113,12 +113,19 @@ def heuristic(state, action_name):
     #If you have wood, you should be turning it into planks
     if state["wood"] == 1 and "for wood" not in action_name:
         return inf
-    
+
     #Don't need more than 8 cobble
     if state["cobble"] > 8:
         return inf
 
-    
+    #never need more than 6 ingot since max ingot to craft is 6 with the rails
+    if state["ingot"] > 6:
+        return inf
+
+    #seems like we only need 1 cart for now suspect to change
+    if state["cart"] > 1:
+        return inf
+
     #Only check these requirements if you're crafting
     if action_name[0:5] == "craft":
         #Don't make duplicate tools
@@ -126,11 +133,12 @@ def heuristic(state, action_name):
         for tool in list_of_tools:
             if state[tool] > 1:
                 return inf
-        
+
+
         #No recipie needs more than 2 sticks, so if we have more than 4 (1 craft worth) something is bad
         if state["stick"] > 4:
             return inf
-        
+
         #Don't need more planks than 1 craft makes, except that due to reasons you might need more temporarily
         if state["plank"] > 7:
             return inf
@@ -155,8 +163,8 @@ def heuristic(state, action_name):
                 #print("failpick")
                 return inf
             #At this point, if we're making a tool, priortiise it, tools are good)
-            if "axe" in shortened_name:
-                return -.5
+        #    if "axe" in shortened_name:
+            #    return -.5
 
     #Check to see that you never use a bad tool, or that you make a better tool instead of using a bad one
     elif "axe" in action_name:
@@ -167,7 +175,7 @@ def heuristic(state, action_name):
                 return inf
             if "wooden_pickaxe" in action_name and (state["stone_pickaxe"] or (state["cobble"] >= 3 and state["stick"] >= 2)):
                 return inf
-            
+
             #Also make sure we aren't trying to get cobble if we already have everything that needs cobble
             if "cobble" in action_name and state["furnace"] and (state["stone_pickaxe"] or state["iron_pickaxe"]) and (state["stone_axe"] or state["iron_axe"]):
                 return inf
@@ -177,8 +185,8 @@ def heuristic(state, action_name):
                 return inf
             if "wooden_axe" in action_name and (state["stone_axe"] or (state["cobble"] >= 3 and state["stick"] >= 2)):
                 return inf
-        
-    
+
+
     #If we have no ore, don't get coal
     if state["ore"] == 0 and state["coal"] > 0:
         return inf
@@ -228,9 +236,15 @@ def search(graph, state, is_goal, limit, heuristic):
         if _ == inf:
             #print (frontQueue[0:100])
             break
-        #if current_state["ingot"] > 0:
-        #    print("ingot!!")
-        
+
+    #    if current_state["wooden_pickaxe"] == 1:
+    #        if current_state["wooden_axe"] == 0:
+    #            print("aha")
+    #            print(new_state["cobble"])
+
+    #    if current_state["wooden_axe"] == 0:
+        #    if current_state["stone_pickaxe"] == 1:
+        #        print("WWWWWWWWWWW")
     #----------------------------------------------------------------
     #is what happens if we find destination
         if is_goal(current_state):
@@ -251,6 +265,12 @@ def search(graph, state, is_goal, limit, heuristic):
                 #print("adding")
                 cost_so_far[new_state] = new_cost
                 priority = new_cost + heuristic(new_state, name)
+                if new_state["wooden_pickaxe"] == 1:
+                    if new_state["wooden_axe"] == 0:
+                        if new_state["cobble"] == 3:
+                            print(new_state)
+                            print(new_cost)
+                            print(priority)
                 heappush(frontQueue, (priority, new_state))
                 came_from[new_state] = current_state
                 action_to_state[new_state] = name
